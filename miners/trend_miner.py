@@ -5,7 +5,7 @@ from EDADataFrame import EDADataFrame
 from operations.filter import Filter
 from operations.group_by import GroupBy
 from insights.attribution_insight import AttributionInsight
-from insights.contextualization import ContextualizedInsight
+from insights.contextualization import Contextualize
 from insights.trend_insight import TrendInsight
 
 from miners.insight_miner import Miner

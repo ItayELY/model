@@ -8,7 +8,6 @@ from operations.filters_con import FiltersCon
 from operations.filters_dis import FiltersDis
 from operations.group_by import GroupBy
 from insights.base_insight import BaseInsight
-from insights.contextualization import ContextualizedInsight
 
 import json
 import pandas as pd

@@ -9,8 +9,8 @@ from operations.filters_dis import FiltersDis
 
 from operations.group_by import GroupBy
 from insights.base_insight import BaseInsight
-from insights.contextualization import ContextualizedInsight
 
+from insights.contextualization import Contextualize
 from enumerate_filters import EnumFilters
 
 import json
@@ -33,7 +33,7 @@ class RefMinerDivConq():
             return val
          
     def mine(self, overlook_attrs = [], k=3, level=5):
-        top = self.exhaustive_miner(overlook_attrs, k, level)
+        top = self.exhaustive_miner_top_k(overlook_attrs, k, level)
                 
         return top
 
@@ -69,83 +69,6 @@ class RefMinerDivConq():
         
         n_filters = len(filters)
         return self.div_conq(filters, df, gb)
-        # filters_1 = filters[:n_filters]
-        # filters_2 = filters[n_filters:]
-        # for f in filters:
-        #     i_f = self._insight.create_insight_object(df, f, gb)
-        #     sc = i_f.score()
-        #     if sc == 0:
-        #         continue
-        #     if self._insight.size_filtered / i_f.size_filtered > 10:
-        #         continue
-        #     rel = min(self._insight._score, sc) / max(self._insight._score, sc)
-        #     flag = True
-        #     if i_f.highlight != self._insight.highlight:
-        #         rel /= 4
-        #         flag = False
-        #     if rel > 0.8 and rel > self.top['similar'][0]:
-        #         self.top['similar'] = (rel, i_f)
-        #                 # heapq.heappush(insights, (sc, i_f))
-        #     elif rel < 0.8 and rel < self.top['different'][0]:
-        #         rel += (self._insight.size_filtered / i_f.size_filtered) / 10
-        #         if rel < self.top['different'][0]:
-        #             self.top['different'] = (rel, i_f)
-        #     if self._insight._score / sc < 1 and self._insight._score / sc  > self.top['optimized'][0] and flag:
-        #         rel += (i_f.size_filtered / self._insight.size_filtered) / 10
-        #         if rel > self.top['optimized'][0]:
-        #             self.top['optimized'] = (rel, i_f)
-                # self.top['optimized'] = (rel, i_f)
-
-        for f in con:
-            i_f = self._insight.create_insight_object(df, f, gb)
-            sc = i_f.score()
-            if sc == 0:
-                continue
-            if self._insight.size_filtered / i_f.size_filtered > 10:
-                continue
-            rel = min(self._insight._score, sc) / max(self._insight._score, sc)
-            flag = True
-            if i_f.highlight != self._insight.highlight:
-                rel /= 4
-                flag = False
-            if rel > 0.8 and rel > self.top['similar'][0]:
-                self.top['similar'] = (rel, i_f)
-                        # heapq.heappush(insights, (sc, i_f))
-            elif rel < 0.8 and rel < self.top['different'][0]:
-                rel += (self._insight.size_filtered / i_f.size_filtered) / 10
-                if rel < self.top['different'][0]:
-                    self.top['different'] = (rel, i_f)
-            if self._insight._score / sc < 1 and self._insight._score / sc  > self.top['optimized'][0] and flag:
-                rel += (i_f.size_filtered / self._insight.size_filtered) / 10
-                if rel > self.top['optimized'][0]:
-                    self.top['optimized'] = (rel, i_f)
-
-
-        for f in dis:
-            i_f = self._insight.create_insight_object(df, f, gb)
-            sc = i_f.score()
-            if sc == 0:
-                continue
-            if self._insight.size_filtered / i_f.size_filtered > 10:
-                continue
-            rel = min(self._insight._score, sc) / max(self._insight._score, sc)
-            flag = True
-            if i_f.highlight != self._insight.highlight:
-                rel /= 4
-                flag = False
-            if rel > 0.8 and rel > self.top['similar'][0]:
-                self.top['similar'] = (rel, i_f)
-                        # heapq.heappush(insights, (sc, i_f))
-            elif rel < 0.8 and rel < self.top['different'][0]:
-                rel += (self._insight.size_filtered / i_f.size_filtered) / 10
-                if rel < self.top['different'][0]:
-                    self.top['different'] = (rel, i_f)
-            if self._insight._score / sc < 1.2 and self._insight._score / sc  > self.top['optimized'][0] and flag:
-                rel += (i_f.size_filtered / self._insight.size_filtered) / 10
-                if rel > self.top['optimized'][0]:
-                    self.top['optimized'] = (rel, i_f) 
-                
-        return self.top
     
 
 
@@ -257,4 +180,83 @@ class RefMinerDivConq():
                 rel += (i_f.size_filtered / self._insight.size_filtered) / 10
                 if rel > cur_top['optimized'][0]:
                     cur_top['optimized'] = (rel, i_f)
+        return cur_top
+
+
+
+
+    def exhaustive_miner_top_k(self, overlook_attrs, k, level):
+        is_gb = False
+        if self._df.operation is None:
+            return []
+        df = self._df
+        if self._df.operation.type == 'groupby':
+            is_gb = True
+        df = self._df
+        while df.operation is not None and level > 0:
+            df = df.prev_df
+            level -= 1
+        size = df.shape[0]
+        self.top_k_all = {'similar': [(0,None)], 'different': [(1,None)], 'optimized': [(0,None)]}
+        
+        g_attr = self._insight.group_by_aggregate.group_attributes[0]
+        if 'binned' in g_attr:
+            _, bins = pd.cut(self._df[g_attr[:-7]], 5, retbins=True, duplicates='drop')
+            df[f'{g_attr}'] = pd.cut(df[g_attr[:-7]], bins=bins)
+            # g_attr_new = f'{g_attr}_binned'
+        gb = self._insight.group_by_aggregate
+
+
+        ef = EnumFilters(df, overlook_attrs=overlook_attrs + [g_attr])
+        filters, con, dis = ef.generate_filters(depth=1)
+        
+        return self.div_conq_top_k(filters, df, gb, k)
+        
+    def div_conq_top_k(self, filters, df, gb, k):
+        cur_top = {'similar': [], 'different': [], 'optimized': []}
+        n_filters = len(filters)
+        if n_filters > 1:
+            filters_1 = filters[:round(n_filters/2)]
+            filters_2 = filters[round(n_filters/2):]
+            next_top_1 = self.div_conq_top_k(filters_1, df, gb, k)
+            next_top_2 = self.div_conq_top_k(filters_2, df, gb, k)
+
+            next_top_1['different'] = list(next_top_1['different'])
+            for tup in next_top_2['different']:
+                if len(next_top_1['different']) < k:
+                    heapq.heappush(next_top_1['different'], tup)
+            
+                else: 
+                    heapq.heappushpop(next_top_1['different'], tup)
+
+            for tup in next_top_2['similar']:
+                if len(next_top_1['similar']) < k:
+                    heapq.heappush(next_top_1['similar'], tup)
+            
+                else: 
+                    heapq.heappushpop(next_top_1['similar'], tup)
+
+           
+            return next_top_1
+
+
+
+
+
+        
+        for f in filters:
+            i_f = self._insight.create_insight_object(df, f, gb)
+            ctx = Contextualize(df, self._insight, i_f)
+            if len(cur_top['different']) < k:
+                heapq.heappush(cur_top['different'], (ctx.distinction_score(), i_f))
+            
+            else: 
+                heapq.heappushpop(cur_top['different'], (ctx.distinction_score(), i_f))
+
+            if len(cur_top['similar']) < k:
+                heapq.heappush(cur_top['similar'], (ctx.similar_score(), i_f))
+            
+            else: 
+                heapq.heappushpop(cur_top['similar'], (ctx.similar_score(), i_f))
+            
         return cur_top

@@ -3,7 +3,6 @@ from EDADataFrame import EDADataFrame
 from operations.filter import Filter
 from operations.group_by import GroupBy
 from insights.attribution_insight import AttributionInsight
-from insights.contextualization import ContextualizedInsight
 
 from miners.outstanding_miner import OutstandingMiner
 # from miners.reference_miner import RefMiner
@@ -72,18 +71,18 @@ filter1 = Filter('Education_Level', '==', 'Uneducated')
 # df2 = filter1.do_operation(bank_all)
 # df2 = filter1.do_operation(bank_all)
 
-# gb = GroupBy(['Income_Category'], {'Income_Category': 'count'})
+gb = GroupBy(['Income_Category'], {'Income_Category': 'count'})
 # filter1 = Filter('Gender', '==', 'F')
-# df2 = gb.do_operation(filter1.do_operation(bank_all))
-df2 = filter1.do_operation(bank_all)
+df2 = gb.do_operation(filter1.do_operation(bank_all))
+# df2 = filter1.do_operation(bank_all)
 
 miner = OutstandingMiner(df2, df2.columns, None)
 
 
 
 insights = miner.mine_top_k(overlook_attrs=['CLIENTNUM'])
-# insight_1 = insights[0]
-insight_1 = insights[1]
+insight_1 = insights[0]
+# insight_1 = insights[1]
 # print(list(insights)[0][1][1]) 
 ins_objects = [(i[0], i[1]) for i in insights]
 # full_cnx_insights = []

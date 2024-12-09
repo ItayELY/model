@@ -2,7 +2,7 @@ from EDADataFrame import EDADataFrame
 from operations.filter import Filter
 from operations.group_by import GroupBy
 from insights.attribution_insight import AttributionInsight
-from insights.contextualization import ContextualizedInsight
+from insights.contextualization import Contextualize
 
 import json
 import pandas as pd
@@ -52,7 +52,7 @@ print(edf['Total_Transitions_Count'].describe())
 # # i.show_insight()
 # # print(i1.insight_json())
 # # print('*************Contextualization*************')
-# insight_contx = ContextualizedInsight(insight=i1)
+# insight_contx = Contextualize(insight=i1)
 # # print(insight_contx.cnx_json())
 
 
@@ -62,7 +62,7 @@ print(edf['Total_Transitions_Count'].describe())
 # # i.show_insight()
 # # print(i2.insight_json())
 # # print('*************Contextualization*************')
-# insight_contx2 = ContextualizedInsight(insight=i2)
+# insight_contx2 = Contextualize(insight=i2)
 # # print(insight_contx2.cnx_json())
 
 # cinsight1 = {

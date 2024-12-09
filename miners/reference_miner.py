@@ -7,7 +7,7 @@ from operations.filter import Filter
 
 from operations.group_by import GroupBy
 from insights.base_insight import BaseInsight
-from insights.contextualization import ContextualizedInsight
+from insights.contextualization import Contextualize
 
 from enumerate_filters import EnumFilters
 

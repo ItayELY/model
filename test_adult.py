@@ -2,7 +2,7 @@ from EDADataFrame import EDADataFrame
 from operations.filter import Filter
 from operations.group_by import GroupBy
 from insights.attribution_insight import AttributionInsight
-from insights.contextualization import ContextualizedInsight
+from insights.contextualization import Contextualize
 from insights.outstanding_insight import OutstandingInsight
 
 import json
@@ -33,5 +33,5 @@ black_never_married = f_never_married.do_operation(black)
 i3 = OutstandingInsight.create_insight_object(black_never_married, None, gb1)
 print(i3.score(), i3.target_retreival_query)
 
-insight_contx = ContextualizedInsight(insight=i3)
+insight_contx = Contextualize(insight=i3)
 print(insight_contx.cnx_json())

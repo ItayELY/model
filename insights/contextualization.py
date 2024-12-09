@@ -17,19 +17,10 @@ opposite_ops = {
     "between": lambda x, tup: x.apply(lambda item: tup[0] > item >= tup[1])
 }
 class ContextualizedInsight():
-    def __init__(self, insight: BaseInsight, ref_df: EDADataFrame | None = None, cnx_type: str | None = None, 
-                 ):
+    def __init__(self, base_df, insight: BaseInsight, ref_insight: BaseInsight):
+        self._base_df = base_df
         self._insight = insight
-        self.target_df = insight._df
-        self.rq_changes = []
-        if ref_df is None:
-            self.ref_df = self.ommit_first_filter_reference(self.target_df)
-            self.contextualize()
-        else:
-            self.ref_df = ref_df
-        self.contextualization = {
-            "cnx_type": cnx_type
-        }
+        self.ref_insight = ref_insight
 
     def compare_ref(self, ref_df):
         score1 = self._insight.score(self.target_df)

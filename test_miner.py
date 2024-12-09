@@ -119,9 +119,9 @@ for i in context_insights.items():
             # print(f'{i[0]}: {json.dumps(i_json, indent = 1, skipkeys = True,) }')
             # cx_ins[f'{i[0]}_insight'] = i_json
         except Exception as e:
-
+# 
             pass
-            # print(f'didnt find interesting {i[0]} ref')
+            print(f'didnt find interesting {i[0]} ref')
     # contextualized_insights.append(cx_ins)
 plt.show()
 

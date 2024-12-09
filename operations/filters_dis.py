@@ -30,8 +30,8 @@ class FiltersDis(Operation):
         # self.attribute = attribute
         self.filters = filters
         self.values = []
-        for f in filters:
-            self.values.append(f.value)
+        # for f in filters:
+        #     self.values.append(f.value)
         self.type = 'filters disjunction'
     def do_operation(self, df):
         dfs = []

@@ -41,7 +41,9 @@ class OutstandingInsight(BaseInsight):
                 size_filtered = self.filter.do_operation(df).shape[0]
             except:
                 size_filtered = size
+                    # Handle case where filtered data is empty
             if size_filtered == 0:
+                self.size_filtered = 0.01
                 return 0
             self.size_filtered = size_filtered 
             view = self.get_insight_view(df)

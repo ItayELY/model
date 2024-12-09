@@ -6,7 +6,8 @@ from insights.attribution_insight import AttributionInsight
 from insights.contextualization import ContextualizedInsight
 
 from miners.outstanding_miner import OutstandingMiner
-from miners.reference_miner import RefMiner
+# from miners.reference_miner import RefMiner
+from miners.reference_miner_div_conq import RefMinerDivConq as RefMiner
 from miners.trend_miner import TrendMiner
 
 import json
@@ -64,7 +65,7 @@ filter2 = Filter('loudness', '<=', -20.5)
 df23 = filter2.do_operation(df2)
 gb = GroupBy(['decade'], {'acousticness': 'mean'})
 df_gb = gb.do_operation(df2)
-df_t = filter2.do_operation(bank_all)
+df_t = filter1.do_operation(bank_all)
 # df2 = bank_all
 
 miner = OutstandingMiner(df_t, df_t.columns, None)
@@ -77,7 +78,7 @@ start_time = time.time()
 insights = miner.mine_top_k(overlook_attrs=overlook_attrs)
 print("Insight Mining--- %s seconds ---" % (time.time() - start_time))
 
-insight_1 = insights[4]
+insight_1 = insights[0]
 # print(list(insights)[0][1][1]) 
 ins_objects = [(i[0], i[1]) for i in insights]
 # full_cnx_insights = []

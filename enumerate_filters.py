@@ -115,3 +115,46 @@ class EnumFilters():
 # filters = generate_filters(attributes, operators, values, depth=2)
 # for f in filters[:10]:  # Print the first 10 filters
 #     print(f)
+    def generate_filters_by_attr(self, depth = 1):
+        if depth == 0:
+            return []
+    
+#     # Generate basic conditions: attr op val
+        basic_conditions_1 = []
+        basic_conditions_2 = []
+        filter_dict = {}
+        for k, v in self.values.items():
+            filter_dict[k] = []
+            for val in v:
+                basic_conditions_1.append(f"{k} == {val}")
+                
+                filter_dict[k].append(Filter(k, '==', val))
+        for k, v in self.values_int.items():
+            for val in v:
+                basic_conditions_1.append(f"{k} between {val}")
+                
+                filter_dict[k].append(Filter(k, 'between', (val.left, val.right)))
+        # if depth == 1:
+        return filter_dict, [], []
+        # for k, v in self.values_int.items():
+            # basic_conditions_2 += [
+                # f"{k} between ({val.left}, {val.right})" for val in v
+            # ]
+
+    # Combine conditions using 'and' or 'or'
+        # combined_conditions = [
+        #     f"({c1} {logical} {c2})"
+        #     for c1, c2 in product(basic_conditions_1, repeat=2)
+        #     for logical in ["and", "or"]
+        # ]
+        # con_filters = []
+        # dis_filters = []
+        # for f1, f2 in product(filters, repeat=2):
+        #     con_filters.append(FiltersCon([f1, f2]))
+        #     dis_filters.append(FiltersDis([f1, f2]))
+        # # combined_conditions = [
+        # #     f"({c1} {logical} {c2})"
+        # #     for c1, c2 in product(basic_conditions_1, repeat=2)
+        # #     for logical in ["and", "or"]
+        # # ]
+        # return filters, con_filters, dis_filters

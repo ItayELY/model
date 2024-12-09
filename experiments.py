@@ -7,7 +7,8 @@ from insights.attribution_insight import AttributionInsight
 from insights.contextualization import ContextualizedInsight
 
 from miners.outstanding_miner import OutstandingMiner
-from miners.reference_miner import RefMiner
+# from miners.reference_miner import RefMiner
+from miners.reference_miner_div_conq import RefMinerDivConq
 from miners.trend_miner import TrendMiner
 import time
 
@@ -67,8 +68,8 @@ def by_attrs(df, ref_miner):
         ['Gender', 'CLIENTNUM', 'Credit_Limit', 'Attrition_Flag', 'Card_Category', 'Marital_Status'], 
         ['Credit_Open_To_Buy', 'CLIENTNUM', 'Credit_Limit', 'Attrition_Flag', 'Card_Category', 'Marital_Status'],
         ['Credit_Open_To_Buy', 'CLIENTNUM', 'Credit_Limit', 'Customer_Age', 'Card_Category', 'Marital_Status'],
-        ['Credit_Open_To_Buy', 'CLIENTNUM', 'Credit_Limit', 'Customer_Age', 'Credit_Avg_Utilization_Ratio', 'Marital_Status']
-        ['Credit_Open_To_Buy', 'CLIENTNUM', 'Credit_Limit', 'Customer_Age', 'Credit_Avg_Utilization_Ratio', 'Months_on_book']
+        # ['Credit_Open_To_Buy', 'CLIENTNUM', 'Credit_Limit', 'Customer_Age', 'Credit_Avg_Utilization_Ratio', 'Marital_Status'],
+        # ['Credit_Open_To_Buy', 'CLIENTNUM', 'Credit_Limit', 'Customer_Age', 'Credit_Avg_Utilization_Ratio', 'Months_on_book'],
     ]
     j = 1
     for i in attrs_lists:#, 1000, 1500, 2000, 2500, 3000]:
@@ -115,7 +116,7 @@ insight_1 = insights[0]
 # print(list(insights)[0][1][1]) 
 ins_objects = [(i[0], i[1]) for i in insights]
 # full_cnx_insights = []
-ref_miner = RefMiner(miner._df, insight_1)
+ref_miner = RefMinerDivConq(miner._df, insight_1)
 contextualized_insights = []
 for ins in ins_objects:
     ins_json = ins[1].insight_json()

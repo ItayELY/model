@@ -29,9 +29,13 @@ class FiltersCon(Operation):
         # self.value = value
         # self.attribute = attribute
         self.filters = filters
-        self.values = []
-        for f in filters:
-            self.values.append(f.value)
+        # self.values = []
+        # for f in filters:
+        #     if type(f) == type(self):
+        #         for sf in f:
+        #             self.values.append(sf.value)
+                        
+        #     self.values.append(f.value)
         self.type = 'filters conjunction'
     def do_operation(self, df):
         df_new = df

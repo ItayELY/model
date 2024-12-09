@@ -10,7 +10,8 @@ from operations.filter import Filter
 from operations.group_by import GroupBy
 from insights.base_insight import BaseInsight
 from miners.outstanding_miner import OutstandingMiner
-from miners.reference_miner import RefMiner
+# from miners.reference_miner import RefMiner
+from miners.reference_miner_div_conq import RefMinerDivConq as RefMiner
 
 import matplotlib.pyplot as plt
 import pandas as pd

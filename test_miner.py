@@ -6,7 +6,9 @@ from insights.attribution_insight import AttributionInsight
 from insights.contextualization import ContextualizedInsight
 
 from miners.outstanding_miner import OutstandingMiner
-from miners.reference_miner import RefMiner
+# from miners.reference_miner import RefMiner
+from miners.reference_miner_div_conq import RefMinerDivConq
+
 from miners.trend_miner import TrendMiner
 import time
 
@@ -68,6 +70,11 @@ bank_all = EDADataFrame(bank_all)
 filter1 = Filter('Education_Level', '==', 'Uneducated')
 # filter1 = Filter('Gender', '==', 'F')
 # df2 = filter1.do_operation(bank_all)
+# df2 = filter1.do_operation(bank_all)
+
+# gb = GroupBy(['Income_Category'], {'Income_Category': 'count'})
+# filter1 = Filter('Gender', '==', 'F')
+# df2 = gb.do_operation(filter1.do_operation(bank_all))
 df2 = filter1.do_operation(bank_all)
 
 miner = OutstandingMiner(df2, df2.columns, None)
@@ -75,11 +82,12 @@ miner = OutstandingMiner(df2, df2.columns, None)
 
 
 insights = miner.mine_top_k(overlook_attrs=['CLIENTNUM'])
-insight_1 = insights[0]
+# insight_1 = insights[0]
+insight_1 = insights[1]
 # print(list(insights)[0][1][1]) 
 ins_objects = [(i[0], i[1]) for i in insights]
 # full_cnx_insights = []
-ref_miner = RefMiner(miner._df, insight_1)
+ref_miner = RefMinerDivConq(miner._df, insight_1)
 contextualized_insights = []
 for ins in ins_objects:
     ins_json = ins[1].insight_json()

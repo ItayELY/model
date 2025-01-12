@@ -74,113 +74,113 @@ class RefMinerDivConq():
 
 
 
-    def div_conq(self, filters, df, gb):
-        cur_top = {'similar': (0, None), 'different': (1, None), 'optimized': (0, None)}
-        n_filters = len(filters)
-        if n_filters > 1:
-            filters_1 = filters[:round(n_filters/2)]
-            filters_2 = filters[round(n_filters/2):]
-            next_top_1 = self.div_conq(filters_1, df, gb)
-            next_top_2 = self.div_conq(filters_2, df, gb)
+    # def div_conq(self, filters, df, gb):
+    #     cur_top = {'similar': (0, None), 'different': (1, None), 'optimized': (0, None)}
+    #     n_filters = len(filters)
+    #     if n_filters > 1:
+    #         filters_1 = filters[:round(n_filters/2)]
+    #         filters_2 = filters[round(n_filters/2):]
+    #         next_top_1 = self.div_conq(filters_1, df, gb)
+    #         next_top_2 = self.div_conq(filters_2, df, gb)
 
-            if next_top_1['similar'][0] > next_top_2['similar'][0]:
-                cur_top['similar'] = next_top_1['similar']
-            else:
-                cur_top['similar'] = next_top_2['similar']
+    #         if next_top_1['similar'][0] > next_top_2['similar'][0]:
+    #             cur_top['similar'] = next_top_1['similar']
+    #         else:
+    #             cur_top['similar'] = next_top_2['similar']
             
-            if next_top_1['different'][0] < next_top_2['different'][0]:
-                cur_top['different'] = next_top_1['different']
-            else:
-                cur_top['different'] = next_top_2['different']
+    #         if next_top_1['different'][0] < next_top_2['different'][0]:
+    #             cur_top['different'] = next_top_1['different']
+    #         else:
+    #             cur_top['different'] = next_top_2['different']
 
-            if next_top_1['optimized'][0] > next_top_2['optimized'][0]:
-                cur_top['optimized'] = next_top_1['optimized']
-            else:
-                cur_top['optimized'] = next_top_2['optimized']
+    #         if next_top_1['optimized'][0] > next_top_2['optimized'][0]:
+    #             cur_top['optimized'] = next_top_1['optimized']
+    #         else:
+    #             cur_top['optimized'] = next_top_2['optimized']
 
-            if next_top_1['similar'][1] is not None and next_top_2['similar'][1] is not None:
-                merged_similar_f = FiltersDis([next_top_1['similar'][1].filter, next_top_2['similar'][1].filter])
-                i_f = self._insight.create_insight_object(df, merged_similar_f, gb)
-                sc = i_f.score()
-                if sc == 0:
-                    pass
-                if self._insight.size_filtered / i_f.size_filtered > 10:
-                    pass
-                rel = min(self._insight._score, sc) / max(self._insight._score, sc)
-                flag = True
-                if i_f.highlight != self._insight.highlight:
-                    rel /= 4
-                    flag = False
-                if rel > 0.8 and rel > next_top_1['similar'][0] and rel > next_top_2['similar'][0]:
-                    cur_top['similar'] = (rel, i_f)
+    #         if next_top_1['similar'][1] is not None and next_top_2['similar'][1] is not None:
+    #             merged_similar_f = FiltersDis([next_top_1['similar'][1].filter, next_top_2['similar'][1].filter])
+    #             i_f = self._insight.create_insight_object(df, merged_similar_f, gb)
+    #             sc = i_f.score()
+    #             if sc == 0:
+    #                 pass
+    #             if self._insight.size_filtered / i_f.size_filtered > 10:
+    #                 pass
+    #             rel = min(self._insight._score, sc) / max(self._insight._score, sc)
+    #             flag = True
+    #             if i_f.highlight != self._insight.highlight:
+    #                 rel /= 4
+    #                 flag = False
+    #             if rel > 0.8 and rel > next_top_1['similar'][0] and rel > next_top_2['similar'][0]:
+    #                 cur_top['similar'] = (rel, i_f)
 
-            if next_top_1['different'][1] is not None and next_top_2['different'][1] is not None:
-                merged_different_f = FiltersDis([next_top_1['different'][1].filter, next_top_2['different'][1].filter])
-                i_f = self._insight.create_insight_object(df, merged_different_f, gb)
-                sc = i_f.score()
-                if sc == 0:
-                    pass
-                if self._insight.size_filtered / i_f.size_filtered > 10:
-                    pass
-                rel = min(self._insight._score, sc) / max(self._insight._score, sc)
-                flag = True
-                if i_f.highlight != self._insight.highlight:
-                    rel /= 4
-                    flag = False
-                elif rel < 0.8 and rel < next_top_1['different'][0] and rel < next_top_1['different'][0]:
-                    rel += (self._insight.size_filtered / i_f.size_filtered) / 10
-                    if rel < next_top_1['different'][0] and rel < next_top_2['different'][0]:
-                        cur_top['different'] = (rel, i_f)
+    #         if next_top_1['different'][1] is not None and next_top_2['different'][1] is not None:
+    #             merged_different_f = FiltersDis([next_top_1['different'][1].filter, next_top_2['different'][1].filter])
+    #             i_f = self._insight.create_insight_object(df, merged_different_f, gb)
+    #             sc = i_f.score()
+    #             if sc == 0:
+    #                 pass
+    #             if self._insight.size_filtered / i_f.size_filtered > 10:
+    #                 pass
+    #             rel = min(self._insight._score, sc) / max(self._insight._score, sc)
+    #             flag = True
+    #             if i_f.highlight != self._insight.highlight:
+    #                 rel /= 4
+    #                 flag = False
+    #             elif rel < 0.8 and rel < next_top_1['different'][0] and rel < next_top_1['different'][0]:
+    #                 rel += (self._insight.size_filtered / i_f.size_filtered) / 10
+    #                 if rel < next_top_1['different'][0] and rel < next_top_2['different'][0]:
+    #                     cur_top['different'] = (rel, i_f)
 
 
-            if next_top_1['optimized'][1] is not None and next_top_2['optimized'][1] is not None:
-                merged_opt_f = FiltersDis([next_top_1['optimized'][1].filter, next_top_2['optimized'][1].filter])
-                i_f = self._insight.create_insight_object(df, merged_opt_f, gb)
-                sc = i_f.score()
-                if sc == 0:
-                    pass
-                if self._insight.size_filtered / i_f.size_filtered > 10:
-                    pass
-                rel = min(self._insight._score, sc) / max(self._insight._score, sc)
-                flag = True
-                if i_f.highlight != self._insight.highlight:
-                    rel /= 4
-                    flag = False
-                if self._insight._score / sc < 1 and self._insight._score / sc  > next_top_1['optimized'][0] and self._insight._score / sc  > next_top_1['optimized'][0] and flag:
-                    rel += (i_f.size_filtered / self._insight.size_filtered) / 10
-                    if rel > next_top_1['optimized'][0] and rel > next_top_2['optimized'][0]:
-                        cur_top['optimized'] = (rel, i_f)
-            return cur_top
+    #         if next_top_1['optimized'][1] is not None and next_top_2['optimized'][1] is not None:
+    #             merged_opt_f = FiltersDis([next_top_1['optimized'][1].filter, next_top_2['optimized'][1].filter])
+    #             i_f = self._insight.create_insight_object(df, merged_opt_f, gb)
+    #             sc = i_f.score()
+    #             if sc == 0:
+    #                 pass
+    #             if self._insight.size_filtered / i_f.size_filtered > 10:
+    #                 pass
+    #             rel = min(self._insight._score, sc) / max(self._insight._score, sc)
+    #             flag = True
+    #             if i_f.highlight != self._insight.highlight:
+    #                 rel /= 4
+    #                 flag = False
+    #             if self._insight._score / sc < 1 and self._insight._score / sc  > next_top_1['optimized'][0] and self._insight._score / sc  > next_top_1['optimized'][0] and flag:
+    #                 rel += (i_f.size_filtered / self._insight.size_filtered) / 10
+    #                 if rel > next_top_1['optimized'][0] and rel > next_top_2['optimized'][0]:
+    #                     cur_top['optimized'] = (rel, i_f)
+    #         return cur_top
 
 
 
 
 
         
-        for f in filters:
-            i_f = self._insight.create_insight_object(df, f, gb)
-            sc = i_f.score()
-            if sc == 0:
-                continue
-            if self._insight.size_filtered / i_f.size_filtered > 10:
-                continue
-            rel = min(self._insight._score, sc) / max(self._insight._score, sc)
-            flag = True
-            if i_f.highlight != self._insight.highlight:
-                rel /= 4
-                flag = False
-            if rel > 0.8 and rel > cur_top['similar'][0]:
-                cur_top['similar'] = (rel, i_f)
-                        # heapq.heappush(insights, (sc, i_f))
-            elif rel < 0.8 and rel < cur_top['different'][0]:
-                rel += (self._insight.size_filtered / i_f.size_filtered) / 10
-                if rel < cur_top['different'][0]:
-                    cur_top['different'] = (rel, i_f)
-            if self._insight._score / sc < 1 and self._insight._score / sc  > cur_top['optimized'][0] and flag:
-                rel += (i_f.size_filtered / self._insight.size_filtered) / 10
-                if rel > cur_top['optimized'][0]:
-                    cur_top['optimized'] = (rel, i_f)
-        return cur_top
+    #     for f in filters:
+    #         i_f = self._insight.create_insight_object(df, f, gb)
+    #         sc = i_f.score()
+    #         if sc == 0:
+    #             continue
+    #         if self._insight.size_filtered / i_f.size_filtered > 10:
+    #             continue
+    #         rel = min(self._insight._score, sc) / max(self._insight._score, sc)
+    #         flag = True
+    #         if i_f.highlight != self._insight.highlight:
+    #             rel /= 4
+    #             flag = False
+    #         if rel > 0.8 and rel > cur_top['similar'][0]:
+    #             cur_top['similar'] = (rel, i_f)
+    #                     # heapq.heappush(insights, (sc, i_f))
+    #         elif rel < 0.8 and rel < cur_top['different'][0]:
+    #             rel += (self._insight.size_filtered / i_f.size_filtered) / 10
+    #             if rel < cur_top['different'][0]:
+    #                 cur_top['different'] = (rel, i_f)
+    #         if self._insight._score / sc < 1 and self._insight._score / sc  > cur_top['optimized'][0] and flag:
+    #             rel += (i_f.size_filtered / self._insight.size_filtered) / 10
+    #             if rel > cur_top['optimized'][0]:
+    #                 cur_top['optimized'] = (rel, i_f)
+    #     return cur_top
 
 
 
@@ -222,13 +222,30 @@ class RefMinerDivConq():
             next_top_2 = self.div_conq_top_k(filters_2, df, gb, k)
 
             next_top_1['different'] = list(next_top_1['different'])
+            
             for tup in next_top_2['different']:
                 if len(next_top_1['different']) < k:
                     heapq.heappush(next_top_1['different'], tup)
             
                 else: 
                     heapq.heappushpop(next_top_1['different'], tup)
-
+            filters = [d_i[1].filter for d_i in next_top_1['different']]
+            sublists = []
+            for start in range(len(filters) + 1):
+                for end in range(start + 1, len(filters) + 1):
+                    sublist = filters[start:end]
+                    if len(sublist) > 1:  # Only include lists with more than one item
+                        sublists.append(sublist)
+            for sl in sublists:
+                mf = FiltersCon(sl)
+                i_f = self._insight.create_insight_object(df, mf, gb)
+                ctx = Contextualize(df, self._insight, i_f)
+                if len(next_top_1['different']) < k:
+                    heapq.heappush(next_top_1['different'], (ctx.distinction_score(), i_f))
+                else: 
+                    heapq.heappushpop(next_top_1['different'], (ctx.distinction_score(), i_f))
+            
+            
             for tup in next_top_2['similar']:
                 if len(next_top_1['similar']) < k:
                     heapq.heappush(next_top_1['similar'], tup)
@@ -236,7 +253,21 @@ class RefMinerDivConq():
                 else: 
                     heapq.heappushpop(next_top_1['similar'], tup)
 
-           
+            filters = [d_i[1].filter for d_i in next_top_1['similar']]
+            sublists = []
+            for start in range(len(filters) + 1):
+                for end in range(start + 1, len(filters) + 1):
+                    sublist = filters[start:end]
+                    if len(sublist) > 1:  # Only include lists with more than one item
+                        sublists.append(sublist)
+            for sl in sublists:
+                mf = FiltersCon(sl)
+                i_f = self._insight.create_insight_object(df, mf, gb)
+                ctx = Contextualize(df, self._insight, i_f)
+                if len(next_top_1['similar']) < k:
+                    heapq.heappush(next_top_1['similar'], (ctx.distinction_score(), i_f))
+                else: 
+                    heapq.heappushpop(next_top_1['similar'], (ctx.distinction_score(), i_f))           
             return next_top_1
 
 

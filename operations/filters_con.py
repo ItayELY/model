@@ -46,6 +46,8 @@ class FiltersCon(Operation):
     def do_operation_not(self, df):
         return EDADataFrame(df.loc[operators[self.operation_str](df[self.attribute], self.value)], operation = self, prev_df=df)
     def __str__(self):
+        if len(self.filters) == 0:
+            return ''
         string = f'{self.filters[0]}'
         for f in self.filters[1:]:
             string = string + f'\nAND\n{str(f)}'  

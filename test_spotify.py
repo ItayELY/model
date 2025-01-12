@@ -1,137 +1,161 @@
+import random
 from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
 from EDADataFrame import EDADataFrame
+from miners.outstanding_miner import OutstandingMiner
 from operations.filter import Filter
 from operations.group_by import GroupBy
-from insights.attribution_insight import AttributionInsight
-from insights.contextualization import Contextualize
+from insights.base_insight import BaseInsight
+from insights.outstanding_insight import OutstandingInsight
 
-from miners.outstanding_miner import OutstandingMiner
-# from miners.reference_miner import RefMiner
-from miners.reference_miner_div_conq import RefMinerDivConq as RefMiner
-from miners.trend_miner import TrendMiner
-
-import json
-import pandas as pd
-import heapq
-import warnings
-import time
-
-warnings.filterwarnings("ignore")
-
-def viz_insight(df, ins, ax, key_title = ''):
-    insight_view = ins.get_insight_view(df)
+from final_contextualize.global_contextualize import GlobalContextualize
 
 
-    idx = list(str(i) for i in insight_view.index)
-    vals = list(i[0] for i in insight_view.values)
-    ax.bar(idx, vals)
-        # ax = insight_view.plot.bar(rot=45, figsize=(7,7))
-    title = f"{key_title} when filtering"
-    flag = False
-    if len(ins.target_retreival_query) > 0:
-        for r in ins.target_retreival_query:
-            rq = list(r.dict().items())
-            title = title + f'\nmanually by \"{rq[0][1]} {rq[1][1]} {rq[2][1]}\"'
-            flag = True
-    if ins.filter is not None:
-        if flag:
-             title += ', followed'
-        title = title + f'\nby insight-driven filter \"{ins.filter.attribute} {ins.filter.operation_str} {ins.filter.value}\"'
+
+
+def get_df_name(df):
+    name =[x for x in globals() if globals()[x] is df][0]
+    return name
+def viz_insight_with_ref(df, df_ref, ins, ax, key_title = '', highlight = ''):
     
+    insight_view = ins.get_insight_view(df)
+    # insight_ref = ins.create_insight_object(df_ref, ins.filter, ins.group_by_aggregate)
+    insight_view_ref = ins.get_insight_view(df_ref)
+    # idx = set(list(str(i) for i in insight_view.index) + list(str(i) for i in insight_view_ref.index))
+    idx = set(list(i for i in insight_view.index) + list(i for i in insight_view_ref.index))
+
+    for i in idx:
+        if i not in list((i) for i in insight_view.index):
+            insight_view.loc[i] = 0
+        if i not in list((i) for i in insight_view_ref.index):
+            insight_view_ref.loc[i] = 0
+    
+    vals = list(insight_view.loc[i][0] for i in idx)
+    vals_ref = list(insight_view_ref.loc[i][0] for i in idx)
+    colors = []
+    colors_ref = []
+    for i in idx:
+        if i == str(highlight):
+            colors.append('blue')
+            colors_ref.append('orange')
+        else:
+            colors.append('cornflowerblue')
+            colors_ref.append('sandybrown')
+    # colors = ['blue' for i in idx if i != str(i.highlight) else 'orange']  # Highlight the second bar
+    X_axis = np.arange(len(idx))
+    ax.bar(X_axis - 0.2, vals, 0.4, color=colors, align="center")
+    ax.bar(X_axis + 0.2, vals_ref, 0.4, color=colors_ref, align="center")
+    title = f'{key_title}:\nYour df (blue)- {df.get_path()}\nreference df (orange)- {df_ref.get_path()}'
+
+    
+    
+    
+
     ax.set_title(title)
     
     ax.set_xlabel(f"{ins.group_by_aggregate.group_attributes[0]}")
     agg_item = list(ins.group_by_aggregate.agg_dict.items())[0]
     ax.set_ylabel(f"{agg_item[1]} of {agg_item[0]}")
+    ticklabels = [str(i) for i in idx]
+    ax.set_xticks(X_axis)
 
+    ax.set_xticklabels(ticklabels)
     ax.tick_params(axis='x', labelrotation=50)
     return ax
 
-# def update(x):
-#     # print(x)
-#     if x['Income_Category'] in ['Less than $40K', '$40K - $60K']:
-#         x['Income_Category'] = 'Less than $60K'
-#     return x
+def update(x):
+    # print(x)
+    if x['Income_Category'] in ['Less than $40K', '$40K - $60K']:
+        x['Income_Category'] = 'Less than $60K'
+    return x
 
-bank_all = pd.read_csv('./spotify_all.csv')
-# bank_all = bank_all[bank_all['Income_Category'] != "Unknown"]
-# bank_all = bank_all.apply(update, axis=1)
-bank_all = EDADataFrame(bank_all)
+all_songs = pd.read_csv('./spotify_all.csv')
+all_songs = all_songs.sample(frac=0.1)
+all_songs = EDADataFrame(all_songs)
 
-# filter1 = Filter('Education_Level', '==', 'Uneducated')
-filter1 = Filter('popularity', '>=', 65)
-df2 = filter1.do_operation(bank_all)
-filter2 = Filter('loudness', '<=', -20.5)
-df23 = filter2.do_operation(df2)
-gb = GroupBy(['decade'], {'acousticness': 'mean'})
-df_gb = gb.do_operation(df2)
-df_t = filter1.do_operation(bank_all)
-# df2 = bank_all
+for att in all_songs.columns:
+    ser = all_songs[att]
+    dtype = all_songs[att].dtype.name
+    if (dtype in ['int64', 'float64'] ) and len(ser.value_counts().values) > 10:
+        _, bins = pd.cut(ser, 5, retbins=True, duplicates='drop')
+        all_songs[f'{att}_binned'] = pd.cut(all_songs[att], bins=bins)
 
-miner = OutstandingMiner(df_t, df_t.columns, None)
-# miner = OutstandingMiner(df_gb, df2.columns, None)
+# _, bins = pd.cut(all_songs['popularity'], bins=5, retbins=True)
+# all_songs['popularity ']
 
-# overlook_attrs=['id', 'liveness', 'energy', 'danceability', 'speechiness', 'instrumentalness', 'year', 'popularity_score', 'duration_minutes']
-overlook_attrs = ['id', 'popularity_score', 'year', 'acousticness']
+# attr = 'Dependent_count'
+filter2 = Filter('explicit', '==', 1)
+filter1 = Filter('year', '>', 1990)
 
-start_time = time.time()
-insights = miner.mine_top_k(overlook_attrs=overlook_attrs)
-print("Insight Mining--- %s seconds ---" % (time.time() - start_time))
+# ser = set(bank_all[attr])
 
-insight_1 = insights[0]
-# print(list(insights)[0][1][1]) 
-ins_objects = [(i[0], i[1]) for i in insights]
-# full_cnx_insights = []
-ref_miner = RefMiner(miner._df, insight_1)
-contextualized_insights = []
-# for ins in ins_objects:
-    # ins_json = ins[1].insight_json()
-    # print('*************************************************************')
-#     ref_miner = RefMiner(bank_all, ins)
-    # print(f'Looking at insight with overall score {ins[0]}:\n {json.dumps(ins_json, indent=4)}\n\n')
-    
+# val = filter1.value
+
+# other_filters = [Filter(attr, '==', v) if v != val else None for v in ser]
+# other_filters = [Filter(attr, '!=', 'Uneducated')]
 
 
-# plt.xticks(rotation=50)
-start_time = time.time()
-contx = ref_miner.mine(overlook_attrs = overlook_attrs, level=1).items()
-print("Reference Mining--- %s seconds ---" % (time.time() - start_time))
 
-fig, axes = plt.subplots(len(contx), layout = 'constrained', figsize = (7,7 + 7 * len(contx)))
-fig.suptitle('Contextualized Insights-\nInitial Data taken from \"songs_df\"')
-ind = 1
-axes[0] = viz_insight(df_t, insight_1[1], axes[0], 'Obtained Insight- outstanding category')
-for i in contx: 
-        try:
-            i_json = i[1][1].insight_json()
-            axes[ind] = viz_insight(bank_all, i[1][1], axes[ind], f'{i[0]} effect is given')
-            ind += 1
-            # print(f'{i[0]}: {json.dumps(i_json, indent = 1, skipkeys = True,) }')
-            # cx_ins[f'{i[0]}_insight'] = i_json
-        except:
-            pass
-            # print(f'didnt find interesting {i[0]} ref')
-    # contextualized_insights.append(cx_ins)
+gb = GroupBy(['decade'], {'popularity': 'mean'})
+df2 = filter1.do_operation(all_songs)
+# df2 = filter2.do_operation((filter1.do_operation(all_songs)))
+
+miner = OutstandingMiner(df2, df2.columns, None)
+
+
+
+insights = miner.mine_top_k(overlook_attrs=['artists', 'id', 'main_artist', 'name'])
+insight_1 = insights[2]
+print(f'insight: {(insight_1[1].show_insight())}')
+ctx = GlobalContextualize(df2, insight_1[1])
+# ctx.get_neighbors(1)
+similar, dist = ctx.contextualize(1)
+fig, ax = plt.subplots(2, layout = 'constrained', figsize = (7,14))
+
+if len(ctx.sim_insights) > 0:
+    sim_insight = ctx.sim_insights[0]
+    ax[0] = viz_insight_with_ref(df2, sim_insight[0]._df, insight_1[1], ax[0], 'similar', insight_1[1].highlight)
+
+if len(ctx.dist_insights) > 0:
+    dist_insight = ctx.dist_insights[0]
+    ax[1] = viz_insight_with_ref(df2, dist_insight[0]._df, insight_1[1], ax[1], 'distinct', insight_1[1].highlight)
+
+
+ind = 0
+ind2 = 0
+dist_list = []
+dist_tuples = []
+similar_list = []
+
+
+
+
+
+
+# for score, df in similar:
+#     if ind == 3:
+#         ind = 0
+#         ind2 += 1
+#     similar_list.append(df.get_path() + f': {score}')
+#     # viz_insight_with_ref(df2.prev_df, df.prev_df, insight_1[1], ax[ind][ind2], 'similar', insight_1[1].highlight)
+#     ind += 1
+# for score, df in dist:
+#     if ind == 3:
+#         ind = 0
+#         ind2 += 1
+#     dist_list.append(df.get_path() + f': {score}')
+#     # viz_insight_with_ref(df2.prev_df, df.prev_df, insight_1[1], ax[ind][ind2], 'dist', insight_1[1].highlight)
+#     ind += 1
+# # print('similar:')
+# for s in ctx.sim_ranges:
+#     # print(f'\t{s}')
+#     pass
+# # print('dist:')
+
+# for d in ctx.dist_ranges:
+#     # print(f'\t{d}')
+#     pass
 plt.show()
-
-
-#     cx_ins = {'obtained_insight': ins_json}
-# for i in ref_miner.mine().items(): 
-#         try:
-#             i_json = i[1][1].insight_json()
-#             # print(f'{i[0]}: {json.dumps(i_json, indent = 1, skipkeys = True,) }')
-#             cx_ins[f'{i[0]}_insight'] = i_json
-#         except:
-#             pass
-#             # print(f'didnt find interesting {i[0]} ref')
-#     contextualized_insights.append(cx_ins)
-    
-# json_object = json.dumps(contextualized_insights, indent = 4) 
-
-# # Print JSON object
-# print(f'{json_object}') 
-
-# with open("./miner_output.json", "w") as outfile:
-#     outfile.write(json_object)
-# '''
 pass
+     

@@ -7,6 +7,8 @@ from insights.attribution_insight import AttributionInsight
 from miners.outstanding_miner import OutstandingMiner
 # from miners.reference_miner import RefMiner
 from miners.reference_miner_div_conq import RefMinerDivConq
+from miners.reference_miner_div_conq_sample import RefMinerDivConqSample
+from miners.reference_mine_mcmc import RefMinerMCMC
 
 from miners.trend_miner import TrendMiner
 import time
@@ -40,9 +42,10 @@ def viz_insight(df, ins, ax, key_title = '', highlight = ''):
             rq = list(r.dict().items())
             title = title + f'\nmanually by \"{rq[0][1]} {rq[1][1]} {rq[2][1]}\"\n'
             flag = True
-    if ins.filter is not None:
+    if ins.filter is not None and str(ins.filter) != '':
         if flag:
              title += 'followed '
+
         title = title + f'by a suggested filter {str(ins.filter)}'
     
     ax.set_title(title)
@@ -66,8 +69,8 @@ bank_all = bank_all[bank_all['Income_Category'] != "Unknown"]
 bank_all = bank_all.apply(update, axis=1)
 bank_all = EDADataFrame(bank_all)
 
-filter1 = Filter('Education_Level', '==', 'Uneducated')
-# filter1 = Filter('Gender', '==', 'F')
+# filter1 = Filter('Credit_Limit', 'between', (12000, 23000))
+filter1 = Filter('Gender', '==', 'M')
 # df2 = filter1.do_operation(bank_all)
 # df2 = filter1.do_operation(bank_all)
 
@@ -86,7 +89,8 @@ insight_1 = insights[0]
 # print(list(insights)[0][1][1]) 
 ins_objects = [(i[0], i[1]) for i in insights]
 # full_cnx_insights = []
-ref_miner = RefMinerDivConq(miner._df, insight_1)
+# ref_miner = RefMinerDivConq(miner._df, insight_1)
+ref_miner = RefMinerMCMC(miner._df, insight_1)
 contextualized_insights = []
 for ins in ins_objects:
     ins_json = ins[1].insight_json()
@@ -95,22 +99,20 @@ for ins in ins_objects:
     print(f'Looking at insight with overall score {ins[0]}:\n {json.dumps(ins_json, indent=4)}\n\n')
     
 
-
-
 start_time = time.time()
-context_insights = ref_miner.mine()
+context_insights = ref_miner.mine(overlook_attrs=['Credit_Open_To_Buy', 'CLIENTNUM'])
 fig, axes = plt.subplots(2, 2, layout = 'constrained', figsize = (14,14))
 
 ind = 1
 ind2 = 0
 hl = insight_1[1].highlight
-axes[0][0] = viz_insight(df2, insight_1[1], axes[0][0], 'Outstanding category is detected', hl)
+axes[0][0] = viz_insight(df2.prev_df, insight_1[1], axes[0][0], 'Outstanding category is detected', hl)
 print("--- %s seconds ---" % (time.time() - start_time))
 
 for i in context_insights.items(): 
         try:
-            i_json = i[1][1].insight_json()
-            axes[ind2][ind] = viz_insight(bank_all, i[1][1], axes[ind2][ind], i[0]+' effect', hl)
+            # i_json = i[1][1].insight_json()
+            axes[ind2][ind] = viz_insight(bank_all, i[1][0][1], axes[ind2][ind], i[0]+' effect', hl)
             ind += 1
             if ind == 2:
                 ind = 0

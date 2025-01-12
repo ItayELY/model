@@ -7,7 +7,7 @@ from insights.attribution_insight import AttributionInsight
 from insights.contextualization import Contextualize
 
 from miners.outstanding_miner import OutstandingMiner
-from miners.reference_miner import RefMiner
+from miners.reference_mine_mcmc import RefMinerMCMC as RefMiner
 # from miners.reference_miner_div_conq import RefMinerDivConq
 from miners.trend_miner import TrendMiner
 import time
@@ -38,6 +38,26 @@ def by_n_of_attrs(df, ref_miner):
     ax.set_title('Time of contextualization by # possible of attributes')
     plt.show()
 
+
+def epochs(df, ref_miner):
+    attrs = list(df.columns)
+    time_by_attrs = {}
+# for i in range(1, 10):
+    # for i in range(1, len(attrs)-1):
+        # start_time = time.time()
+    context_insights = ref_miner.mine()
+        # print(f"---{i} attributes: %s seconds ---" % (time.time() - start_time))
+        # time_by_attrs[i] = time.time() - start_time
+    fig, ax = plt.subplots(1, figsize=(7,7))
+
+    steps = list(ref_miner.log.keys())
+    best_scores = list(ref_miner.log.values())
+    ax.plot(steps, best_scores, '-') # this will show date at the x-axis
+    # ax.set_xticks(steps)
+    ax.set_xlabel('# of MCMC steps')
+    ax.set_ylabel('Best Score')
+    ax.set_title('Best score of insight by # of MCMC steps')
+    plt.show()
 
 def by_n_of_rows(df, ref_miner):
     time_by_rows = {}
@@ -101,7 +121,7 @@ bank_all = bank_all[bank_all['Income_Category'] != "Unknown"]
 bank_all = bank_all.apply(update, axis=1)
 bank_all = EDADataFrame(bank_all)
 
-filter1 = Filter('Education_Level', '==', 'Uneducated')
+filter1 = Filter('Card_Category', '==', 'Silver')
 gb = GroupBy(['Income_Category'], {'Income_Category': 'count'})
 # filter1 = Filter('Gender', '==', 'F')
 df2 = gb.do_operation(filter1.do_operation(bank_all))
@@ -125,41 +145,5 @@ for ins in ins_objects:
 #     ref_miner = RefMiner(bank_all, ins)
     print(f'Looking at insight with overall score {ins[0]}:\n {json.dumps(ins_json, indent=4)}\n\n')
     
-by_attrs(bank_all, ref_miner)
+epochs(bank_all, ref_miner)
 
-# o_a = ['CLIENTNUM', 'Attrition_Flag', 'Attrition_Flag', 'Customer_Age', 'Credit_Used', 'Credit_Open_To_Buy', 'Total_Count_Change_Q4_vs_Q1', 'Total_Transitions_Amount']
-# start_time = time.time()
-# context_insights = ref_miner.mine(overlook_attrs=o_a)
-# print("---least attributes: %s seconds ---" % (time.time() - start_time))
-
-# o_a = ['CLIENTNUM', 'Attrition_Flag', 'Customer_Age', 'Credit_Open_To_Buy', 'Total_Count_Change_Q4_vs_Q1', 'Total_Transitions_Amount']
-# start_time = time.time()
-# context_insights = ref_miner.mine(overlook_attrs=o_a)
-# print("---one more: %s seconds ---" % (time.time() - start_time))
-
-# o_a = ['CLIENTNUM', 'Attrition_Flag', 'Customer_Age', 'Total_Count_Change_Q4_vs_Q1', 'Total_Transitions_Amount']
-# start_time = time.time()
-# context_insights = ref_miner.mine(overlook_attrs=o_a)
-# print("---one more: %s seconds ---" % (time.time() - start_time))
-
-# o_a = ['CLIENTNUM']
-# start_time = time.time()
-# context_insights = ref_miner.mine(overlook_attrs=o_a)
-# print("---all: %s seconds ---" % (time.time() - start_time))
-
-# for i in context_insights.items(): 
-#         try:
-#             i_json = i[1][1].insight_json()
-#             # axes[ind2][ind] = viz_insight(bank_all, i[1][1], axes[ind2][ind], i[0])
-#             ind += 1
-#             if ind == 2:
-#                 ind = 0
-#                 ind2 += 1
-#             # print(f'{i[0]}: {json.dumps(i_json, indent = 1, skipkeys = True,) }')
-#             # cx_ins[f'{i[0]}_insight'] = i_json
-#         except:
-#             pass
-#             # print(f'didnt find interesting {i[0]} ref')
-#     # contextualized_insights.append(cx_ins)
-# # plt.show()
-# pass

@@ -56,7 +56,7 @@ class OutstandingInsight(BaseInsight):
         # Generate insight view and calculate contribution metrics
             view = self.get_insight_view(df)
             if not self.highlight:
-                self.highlight = [k for (k, v) in zip(view.index, view.values) if v[0] == max(view.values[0])][0]
+                self.highlight = [k for (k, v) in zip(view.index, view.values) if v[0] == max(([v[0] for v in view.values]))][0]
             self._insight_dict['highlight'] = str(self.highlight)
         
         # Calculate components of the score
@@ -69,20 +69,23 @@ class OutstandingInsight(BaseInsight):
             rarity = (1 - (view.loc[self.highlight] / view.sum()))[0]
         
         # 3. Impact: Logarithmic importance of the filter
-            impact = math.log(size_filtered / size, 2)
-            if impact > 10:
+            impact = size_filtered / size
+            if impact < 0.05:
                 return 0  # Excessively high impact is penalized
         
         # 4. Uniqueness: Boolean measure if the highlight is unique to the filtered data
             uniqueness = 1 #if self.is_highlight_unique(df, self.highlight) else 0.5  # Example uniqueness logic
         
         # Combine components into a final score
-            weights = {'magnitude': 0.6, 'rarity': 0.2, 'impact': 0.2}
+            weights = {'magnitude': 0.6, 'rarity': 0.1, 'impact': 0.3}
             final_score = (
                 weights['magnitude'] * magnitude +
                 weights['rarity'] * rarity +
                 weights['impact'] * impact 
             )
+            t = type(df[self.group_by_aggregate.group_attributes[0]].iloc[0])
+            if t == str:
+                final_score += (1-final_score)/2
         
         # Cache and return the score
             self._score = final_score

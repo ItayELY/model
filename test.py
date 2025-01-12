@@ -1,13 +1,73 @@
+import random
+from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
 from EDADataFrame import EDADataFrame
+from miners.outstanding_miner import OutstandingMiner
 from operations.filter import Filter
 from operations.group_by import GroupBy
-from insights.attribution_insight import AttributionInsight
-from insights.contextualization import Contextualize
+from insights.base_insight import BaseInsight
+from insights.outstanding_insight import OutstandingInsight
 
-import json
-import pandas as pd
-import warnings
-warnings.filterwarnings("ignore")
+from final_contextualize.global_contextualize import GlobalContextualize
+def get_df_name(df):
+    name =[x for x in globals() if globals()[x] is df][0]
+    return name
+def viz_insight_with_ref(df, df_ref, ins, ax, key_title = '', highlight = ''):
+    
+    insight_view = ins.get_insight_view(df)
+    # insight_ref = ins.create_insight_object(df_ref, ins.filter, ins.group_by_aggregate)
+    insight_view_ref = ins.get_insight_view(df_ref)
+    idx = set(list(str(i) for i in insight_view.index) + list(str(i) for i in insight_view_ref.index))
+    for i in idx:
+        if i not in list(str(i) for i in insight_view.index):
+            insight_view.loc[i] = 0
+        if i not in list(str(i) for i in insight_view_ref.index):
+            insight_view_ref.loc[i] = 0
+
+
+
+    # sc_similar = ctx.similar_score()
+    # sc_dist = ctx.distinction_score()
+    # if sc_similar > sc_dist:
+    #     label = 'similarity detected'
+    # else:
+    #     label = 'distinction detected'
+
+    # idx = list(str(i) for i in insight_view.index)
+    
+    vals = list(insight_view.loc[i][0] for i in idx)
+    vals_ref = list(insight_view_ref.loc[i][0] for i in idx)
+    colors = []
+    colors_ref = []
+    for i in idx:
+        if i == str(highlight):
+            colors.append('blue')
+            colors_ref.append('orange')
+        else:
+            colors.append('cornflowerblue')
+            colors_ref.append('sandybrown')
+    # colors = ['blue' for i in idx if i != str(i.highlight) else 'orange']  # Highlight the second bar
+    X_axis = np.arange(len(idx))
+    ax.bar(X_axis - 0.2, vals, 0.4, color=colors, align="center")
+    ax.bar(X_axis + 0.2, vals_ref, 0.4, color=colors_ref, align="center")
+    title = f'{key_title}:\nYour df (blue)- {df.get_path()}\nreference df (orange)- {df_ref.get_path()}'
+
+    
+    
+    
+
+    ax.set_title(title)
+    
+    ax.set_xlabel(f"{ins.group_by_aggregate.group_attributes[0]}")
+    agg_item = list(ins.group_by_aggregate.agg_dict.items())[0]
+    ax.set_ylabel(f"{agg_item[1]} of {agg_item[0]}")
+    ticklabels = [str(i) for i in idx]
+    ax.set_xticks(X_axis)
+
+    ax.set_xticklabels(ticklabels)
+    ax.tick_params(axis='x', labelrotation=50)
+    return ax
 
 def update(x):
     # print(x)
@@ -15,80 +75,53 @@ def update(x):
         x['Income_Category'] = 'Less than $60K'
     return x
 
-
 bank_all = pd.read_csv('./bank_churners_user_study.csv')
-bank_all = bank_all[bank_all['Income_Category'] != "Unknown"]
-bank_all = bank_all.apply(update, axis=1)
-edf = EDADataFrame(bank_all)
-f1 = Filter('Education_Level', '==', 'Uneducated')
-# f2 = Filter('Gender', '==', 'F')
-print(edf['Total_Transitions_Count'].describe())
-# df2 = f1.do_operation(edf)
+# bank_all = bank_all[bank_all['Income_Category'] != "Unknown"]
+# bank_all = bank_all.apply(update, axis=1)
+bank_all = EDADataFrame(bank_all)
+
+attr = 'Dependent_count'
+filter1 = Filter(attr, '==', 3)
+filter2 = Filter('Education_Level', '==', 'Uneducated')
+
+ser = set(bank_all[attr])
+
+val = filter1.value
+
+# other_filters = [Filter(attr, '==', v) if v != val else None for v in ser]
+other_filters = [Filter(attr, '!=', 'Uneducated')]
 
 
 
-# gb1 = GroupBy(['Income_Category', 'Gender'], {'Income_Category': 'count'})
-# df_gb = gb1.do_operation(bank_all)
+gb = GroupBy(['Income_Category'], {'Credit_Limit': 'mean'})
+df1 = filter1.do_operation(bank_all)
+df2 = gb.do_operation(filter2.do_operation(filter1.do_operation(bank_all)))
+
+miner = OutstandingMiner(df2, df2.columns, None)
 
 
-# g_attr = 'Income_Category'
-# f_attr = 'Gender'
-# vals = set(bank_all[f_attr])
-# for v in vals:
-#     filtered_grouped = df_gb.xs(v, level=f_attr)
-#     f = Filter(f_attr, '==', v)
-#     print(f"Data for {f_attr} = {v}:")
-#     print(filtered_grouped)
 
-# Filter by gender = 'F'
-# females = df_gb.xs('F', level='Gender')
-# print("\nData for Gender = F:")
-# print(females)
-# print(df_gb)
+insights = miner.mine_top_k(overlook_attrs=['CLIENTNUM'])
+insight_1 = insights[0]
+ctx = GlobalContextualize(df2, insight_1[1])
+ctx.get_neighbors(2)
+similar, dist = ctx.contextualize(2)
 
-# print('\n\n*************Insight*************')
-# i1 = AttributionInsight.create_insight_object(df2, None, gb1)
-# i1.score()
-# # i.show_insight()
-# # print(i1.insight_json())
-# # print('*************Contextualization*************')
-# insight_contx = Contextualize(insight=i1)
-# # print(insight_contx.cnx_json())
-
-
-# # print('\n\n*************Insight*************')
-# i2 = AttributionInsight.create_insight_object(edf, f1, gb1)
-# i2.score()
-# # i.show_insight()
-# # print(i2.insight_json())
-# # print('*************Contextualization*************')
-# insight_contx2 = Contextualize(insight=i2)
-# # print(insight_contx2.cnx_json())
-
-# cinsight1 = {
-#     'target_retreival_query': i1.target_retreival_query,
-#     'insight_query': i1.insight_json(),
-#     'type': i1.type,
-#     'highlight': i1.highlight,
-#     'score': i1._score,
-#     'contextualization': insight_contx.cnx_json()
-# }
-# cinsight2 = {
-#     'target_retreival_query': i2.target_retreival_query,
-#     'insight_query': i2.insight_json(),
-#     'type': i2.type,
-#     'highlight': i2.highlight,
-#     'score': i2._score,
-#     'contextualization': insight_contx2.cnx_json()
-# }
-
-# cinsights = {
-#     'contextualized_insight_1': cinsight1,
-#     'contextualized_insight_2': cinsight2,
-# }
-# json_object = json.dumps(cinsights, indent = 4) 
-
-# # Print JSON object
-# print(json_object) 
-# with open("./sample.json", "w") as outfile:
-#     outfile.write(json_object)
+fig, ax = plt.subplots(3, 2, layout = 'constrained', figsize = (14,14))
+ind = 0
+ind2 = 0
+for score, df in similar:
+    if ind == 3:
+        ind = 0
+        ind2 += 1
+    viz_insight_with_ref(df2.prev_df, df.prev_df, insight_1[1], ax[ind][ind2], 'similar', insight_1[1].highlight)
+    ind += 1
+for score, df in dist:
+    if ind == 3:
+        ind = 0
+        ind2 += 1
+    viz_insight_with_ref(df2.prev_df, df.prev_df, insight_1[1], ax[ind][ind2], 'dist', insight_1[1].highlight)
+    ind += 1
+plt.show()
+pass
+     

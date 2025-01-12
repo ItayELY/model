@@ -43,8 +43,8 @@ class Miner():
             g_attr_new = g_attr
             if dtype in ['int64', 'float64']:
                 _, bins = pd.cut(df[g_attr], n_bins, retbins=True, duplicates='drop')
-                df[f'{g_attr}'] = pd.cut(df[g_attr], bins=bins)
-                g_attr_new = f'{g_attr}'
+                df[f'{g_attr}_binned'] = pd.cut(df[g_attr], bins=bins)
+                g_attr_new = f'{g_attr}_binned'
             gb = GroupBy([g_attr_new], {g_attr_new: 'count'})
             # i = OutstandingInsight.create_insight_object(df, None, gb)
             i = TrendInsight.create_insight_object(df, None, gb)
@@ -101,6 +101,7 @@ class Miner():
         overlook_attrs = overlook_attrs + prev_attrs 
         # top_insight_per_filter['No'] = (0, None)
         for g_attr in self._group_attrs:
+            g_attr_insights = []
             if g_attr in overlook_attrs:
                 continue
             if  g_attr == 'Card_Category':
@@ -116,16 +117,19 @@ class Miner():
             g_attr_new = g_attr
             ser = df[g_attr]
             to_continue = self.to_continue(dtype, g_attr, ser)
-            if (dtype in ['int64', 'float64'] ) and len(ser.value_counts().values) > 10:
-                _, bins = pd.cut(ser, n_bins, retbins=True, duplicates='drop')
-                df[f'{g_attr}_binned'] = pd.cut(df[g_attr], bins=bins)
-                g_attr_new = f'{g_attr}_binned'
+            if 'binned' not in g_attr and ((dtype in ['int64', 'float64'] ) and len(ser.value_counts().values) > 10):
+                continue
+                # _, bins = pd.cut(ser, n_bins, retbins=True, duplicates='drop')
+                # df[f'{g_attr}_binned'] = pd.cut(df[g_attr], bins=bins)
+                # g_attr_new = f'{g_attr}_binned'
             #temporary!!!
             else:
                 if (len(ser.value_counts().values)) > 10:
                     continue
             gb = GroupBy([g_attr_new], {g_attr_new: 'count'})
             # i = OutstandingInsight.create_insight_object(df, None, gb)
+            if 'Income_Category' in g_attr:
+                pass
             i = self.create_insight_object(df, None, gb)
             max_score = i.score()
             self._top_insight_per_breakdown[g_attr] = (max_score, i)
@@ -154,12 +158,16 @@ class Miner():
                 if i is None:
                     continue
                 # for i in insights:
-                if len(self._insights) < k:
-                    heapq.heappush(self._insights, (i[0], i[1]))
+                if len(g_attr_insights) < k:
+                    heapq.heappush(g_attr_insights, (i[0], i[1]))
                 else:
-                    spilled_value = heapq.heappushpop(self._insights, (i[0], i[1]))
-        ins = self._insights[1][1]
-        insight_view = ins.get_insight_view(df)
+                    spilled_value = heapq.heappushpop(g_attr_insights, (i[0], i[1]))
+        # ins = self._insights[1][1]
+            if len(self._insights) < k:
+                heapq.heappush(self._insights, g_attr_insights[-1])
+            else:
+                spilled_value = heapq.heappushpop(self._insights, (i[0], i[1]))
+        # insight_view = ins.get_insight_view(df)
         # fig, ax = plt.subplots(layout='constrained')
 
 

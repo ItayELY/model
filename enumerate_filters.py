@@ -23,7 +23,7 @@ operators = ["==", "!="]
 
 class EnumFilters():
     def __init__(self, df: EDADataFrame, overlook_attrs = [], n_bins_f = 10):
-        self._df = df
+        self._df = df.copy()
         self.attributes = []
         self.attributes_int = []
         for f_attr in self._df.columns:

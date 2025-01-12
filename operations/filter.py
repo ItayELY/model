@@ -43,6 +43,8 @@ class Filter(Operation):
     def do_operation_not(self, df):
         return EDADataFrame(df.loc[operators[self.operation_str](df[self.attribute], self.value)], operation = self, prev_df=df)
     def __str__(self):
+        if self.operation_str == 'between':
+            return f"{self.value[0]} < {self.attribute} < {self.value[1]}"
         return (f'"{self.attribute} {self.operation_str} {self.value}"')
     def dict(self):
         return {

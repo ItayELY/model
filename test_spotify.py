@@ -99,14 +99,14 @@ filter1 = Filter('year', '>', 1990)
 
 gb = GroupBy(['decade'], {'popularity': 'mean'})
 df2 = filter1.do_operation(all_songs)
-# df2 = filter2.do_operation((filter1.do_operation(all_songs)))
+df2 =gb.do_operation((filter1.do_operation(all_songs)))
 
 miner = OutstandingMiner(df2, df2.columns, None)
 
 
 
 insights = miner.mine_top_k(overlook_attrs=['artists', 'id', 'main_artist', 'name'])
-insight_1 = insights[2]
+insight_1 = insights[0]
 print(f'insight: {(insight_1[1].show_insight())}')
 ctx = GlobalContextualize(df2, insight_1[1])
 # ctx.get_neighbors(1)

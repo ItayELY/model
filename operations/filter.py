@@ -4,7 +4,9 @@ sys.path.append("..")
 from EDADataFrame import EDADataFrame
 from operations.operation import Operation
 
-
+def not_op(op):
+    d = {'==': '!=', '!=': '==', '<': '>', '>': '<'}
+    return d[op]
 operators = {
     "==": (operator.eq),
     ">": operator.gt,
@@ -41,7 +43,7 @@ class Filter(Operation):
     def do_operation(self, df):
         return EDADataFrame(df.loc[operators[self.operation_str](df[self.attribute], self.value)], operation = self, prev_df=df)
     def do_operation_not(self, df):
-        return EDADataFrame(df.loc[operators[self.operation_str](df[self.attribute], self.value)], operation = self, prev_df=df)
+        return EDADataFrame(df.loc[operators[not_op(self.operation_str)](df[self.attribute], self.value)], operation = self, prev_df=df)
     def __str__(self):
         if self.operation_str == 'between':
             return f"{self.value[0]} < {self.attribute} < {self.value[1]}"

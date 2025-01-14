@@ -49,7 +49,7 @@ class GlobalContextualize(BaseContextualize):
             if len(left_operations) > 1:
                     for op in left_operations[1:]:
                         neigh_df = op.do_operation(neigh_df)
-            return neigh_df
+            return neigh_df, adj_f
 
         dtype = src_df[attribute].dtype.name
         n_bins = 10
@@ -116,24 +116,27 @@ class GlobalContextualize(BaseContextualize):
         self.dist_insights = []
         for s in self.sim_ranges:
             try:
-                df = self.get_neighbors(level, 'between', s)
+                df, f = self.get_neighbors(level, 'between', s)
             except:
-                df = self.get_neighbors(level, '==', s)
+                df, f = self.get_neighbors(level, '==', s)
             in2 = OutstandingInsight.create_insight_object(df, self.insight.filter, self.insight.group_by_aggregate)
             ctx_scoring = Contextualize(self.df, self.insight, in2)
             score_sim = ctx_scoring.similar_score()
-            self.sim_insights.append((in2, df.shape[0]))
+            self.sim_insights.append((in2, f, df.shape[0]))
             print(f'similar insight (score {score_sim}): {in2.show_insight()}')
         
         for s in self.dist_ranges:
-            df = self.get_neighbors(level, 'between', s)
+            try:
+                df, f = self.get_neighbors(level, 'between', s)
+            except:
+                df, f = self.get_neighbors(level, '==', s)
             in2 = OutstandingInsight.create_insight_object(df, self.insight.filter, self.insight.group_by_aggregate)
             ctx_scoring = Contextualize(self.df, self.insight, in2)
             score_dist = ctx_scoring.distinction_score()
-            self.dist_insights.append((in2, df.shape[0]))
+            self.dist_insights.append((in2, f, df.shape[0]))
             print(f'distinct insight (score {score_dist}): {in2.show_insight()}')
-        self.sim_insights.sort(key=lambda x: -x[1])
-        self.dist_insights.sort(key=lambda x: -x[1])
+        self.sim_insights.sort(key=lambda x: -x[2])
+        self.dist_insights.sort(key=lambda x: -x[2])
         return similar, dist
         # print(f'similar: {similar}')
         # print(f'dist: {dist}')

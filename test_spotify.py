@@ -17,7 +17,7 @@ from final_contextualize.global_contextualize import GlobalContextualize
 def get_df_name(df):
     name =[x for x in globals() if globals()[x] is df][0]
     return name
-def viz_insight_with_ref(df, df_ref, ins, ax, key_title = '', highlight = ''):
+def viz_insight_with_ref(df, df_ref, ins, ax, key_title = '', highlight = '', color_other = 'green'):
     
     insight_view = ins.get_insight_view(df)
     # insight_ref = ins.create_insight_object(df_ref, ins.filter, ins.group_by_aggregate)
@@ -38,10 +38,10 @@ def viz_insight_with_ref(df, df_ref, ins, ax, key_title = '', highlight = ''):
     for i in idx:
         if i == str(highlight):
             colors.append('blue')
-            colors_ref.append('orange')
+            colors_ref.append(color_other)
         else:
             colors.append('cornflowerblue')
-            colors_ref.append('sandybrown')
+            colors_ref.append(color_other)
     # colors = ['blue' for i in idx if i != str(i.highlight) else 'orange']  # Highlight the second bar
     X_axis = np.arange(len(idx))
     ax.bar(X_axis - 0.2, vals, 0.4, color=colors, align="center")
@@ -71,7 +71,7 @@ def update(x):
     return x
 
 all_songs = pd.read_csv('./spotify_all.csv')
-all_songs = all_songs.sample(frac=0.1)
+# all_songs = all_songs.sample(frac=0.1)
 all_songs = EDADataFrame(all_songs)
 
 for att in all_songs.columns:
@@ -99,7 +99,7 @@ filter1 = Filter('year', '>', 1990)
 
 gb = GroupBy(['decade'], {'popularity': 'mean'})
 df2 = filter1.do_operation(all_songs)
-df2 =gb.do_operation((filter1.do_operation(all_songs)))
+df2 =gb.do_operation(filter2.do_operation(filter1.do_operation(all_songs)))
 
 miner = OutstandingMiner(df2, df2.columns, None)
 
@@ -110,17 +110,33 @@ insight_1 = insights[0]
 print(f'insight: {(insight_1[1].show_insight())}')
 ctx = GlobalContextualize(df2, insight_1[1])
 # ctx.get_neighbors(1)
-similar, dist = ctx.contextualize(1)
-fig, ax = plt.subplots(2, layout = 'constrained', figsize = (7,14))
-
+similar, dist = ctx.contextualize(2)
+fig, axes = plt.subplots(3, layout = 'constrained', figsize = (7,14))
+f1 = None
+f2 = None
 if len(ctx.sim_insights) > 0:
     sim_insight = ctx.sim_insights[0]
-    ax[0] = viz_insight_with_ref(df2, sim_insight[0]._df, insight_1[1], ax[0], 'similar', insight_1[1].highlight)
+    axes[0] = viz_insight_with_ref(df2, sim_insight[0]._df, insight_1[1], axes[0], 'similar', insight_1[1].highlight)
+    f1 = sim_insight[1]
 
 if len(ctx.dist_insights) > 0:
     dist_insight = ctx.dist_insights[0]
-    ax[1] = viz_insight_with_ref(df2, dist_insight[0]._df, insight_1[1], ax[1], 'distinct', insight_1[1].highlight)
+    axes[1] = viz_insight_with_ref(df2, dist_insight[0]._df, insight_1[1], axes[1], 'distinct', insight_1[1].highlight, color_other='orange')
+    f2 = dist_insight[1]
+attr = 'year'
+try:
+    axes[2].hist(f1.do_operation(all_songs)[[attr]], color='green', label='similar')
+except:
+    pass
 
+axes[2].hist(df2.prev_df[attr], color='blue', label='your DF')
+try:
+    inter = filter1.do_operation_not(all_songs)
+    fin = f2.do_operation(inter)
+    axes[2].hist(fin[attr], color='orange', label='distinct')
+except: pass
+plt.legend()
+# axes[2].hist()
 
 ind = 0
 ind2 = 0
@@ -129,33 +145,6 @@ dist_tuples = []
 similar_list = []
 
 
-
-
-
-
-# for score, df in similar:
-#     if ind == 3:
-#         ind = 0
-#         ind2 += 1
-#     similar_list.append(df.get_path() + f': {score}')
-#     # viz_insight_with_ref(df2.prev_df, df.prev_df, insight_1[1], ax[ind][ind2], 'similar', insight_1[1].highlight)
-#     ind += 1
-# for score, df in dist:
-#     if ind == 3:
-#         ind = 0
-#         ind2 += 1
-#     dist_list.append(df.get_path() + f': {score}')
-#     # viz_insight_with_ref(df2.prev_df, df.prev_df, insight_1[1], ax[ind][ind2], 'dist', insight_1[1].highlight)
-#     ind += 1
-# # print('similar:')
-# for s in ctx.sim_ranges:
-#     # print(f'\t{s}')
-#     pass
-# # print('dist:')
-
-# for d in ctx.dist_ranges:
-#     # print(f'\t{d}')
-#     pass
 plt.show()
 pass
      

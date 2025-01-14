@@ -29,9 +29,10 @@ class OutstandingInsight(BaseInsight):
             explanation += f'filtering by {str(self.filter)} And '
         explanation += f'Selecting \"{list(self.group_by_aggregate.agg_dict.values())[0]}\" of \"{list(self.group_by_aggregate.agg_dict.keys())[0]}\" Grouped By \"{self.group_by_aggregate.group_attributes[0]}\"\n'
         explanation += f'The \"{self.highlight}\" group is the most significant (score {self._score}):\n'
-        if self._score > 0.7:
-            explanation += str(self.get_insight_view(self._df))
+        # if self._score > 0.7:
+        #     explanation += str(self.get_insight_view(self._df))
         print(explanation)
+        return explanation
     
     def internal_score(self, df):
         try:

@@ -37,7 +37,7 @@ class BaseInsight():
         if self._score < TH:
             print(f"no interesting {self.type} insight here (score is {0})")
             return
-        self.internal_show_insight(df)
+        return self.internal_show_insight(df)
     
     def score(self, df=None):
         if df is None:

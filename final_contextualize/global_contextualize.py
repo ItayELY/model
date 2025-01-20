@@ -15,6 +15,7 @@ class GlobalContextualize(BaseContextualize):
     def __init__(self, df, insight):
         super().__init__(df, insight)
         self.levels_neighbors = {}
+        self.n_bins = 200
         pass
     
     def get_neighbors(self, level=1, given_op=None, given_v=None):
@@ -52,7 +53,7 @@ class GlobalContextualize(BaseContextualize):
             return neigh_df, adj_f
 
         dtype = src_df[attribute].dtype.name
-        n_bins = 10
+        n_bins = self.n_bins
         attribute_new = attribute
         if dtype in ['int64', 'float64'] and len(set(src_df[f'{attribute}'])) > 10: 
             _, bins = pd.cut(src_df[attribute], n_bins, retbins=True, duplicates='drop')
@@ -98,17 +99,23 @@ class GlobalContextualize(BaseContextualize):
         similar_span = []
         dist = []
         dist_span = []
+
+        similar_span_to_return = []
+        dist_span_to_return = []
         for (f, df) in self.levels_neighbors[level]:
             in2 = OutstandingInsight.create_insight_object(df, self.insight.filter, self.insight.group_by_aggregate)
             ctx_scoring = Contextualize(self.df, self.insight, in2)
             score_sim = ctx_scoring.similar_score()
             score_dist = ctx_scoring.distinction_score()
+            
             if score_sim > score_dist:
                 similar.append((score_sim, df))
                 similar_span.append(f.value)
+                similar_span_to_return.append((score_sim, f.value))
             else:
                 dist.append((score_dist, df))
                 dist_span.append(f.value)
+                dist_span_to_return.append((score_dist, f.value))
         self.sim_ranges = self.concat(similar_span)
         self.dist_ranges = self.concat(dist_span)
 
@@ -123,7 +130,7 @@ class GlobalContextualize(BaseContextualize):
             ctx_scoring = Contextualize(self.df, self.insight, in2)
             score_sim = ctx_scoring.similar_score()
             self.sim_insights.append((in2, f, df.shape[0]))
-            print(f'similar insight (score {score_sim}): {in2.show_insight()}')
+            # print(f'similar insight (score {score_sim}): {in2.show_insight()}')
         
         for s in self.dist_ranges:
             try:
@@ -134,10 +141,38 @@ class GlobalContextualize(BaseContextualize):
             ctx_scoring = Contextualize(self.df, self.insight, in2)
             score_dist = ctx_scoring.distinction_score()
             self.dist_insights.append((in2, f, df.shape[0]))
-            print(f'distinct insight (score {score_dist}): {in2.show_insight()}')
+            # print(f'distinct insight (score {score_dist}): {in2.show_insight()}')
         self.sim_insights.sort(key=lambda x: -x[2])
         self.dist_insights.sort(key=lambda x: -x[2])
-        return similar, dist
+
+
+    
+        self.sim_insights_local = []
+        self.dist_insights_local = []
+        for s in similar_span:
+            try:
+                df, f = self.get_neighbors(level, 'between', s)
+            except:
+                df, f = self.get_neighbors(level, '==', s)
+            in2 = OutstandingInsight.create_insight_object(df, self.insight.filter, self.insight.group_by_aggregate)
+            ctx_scoring = Contextualize(self.df, self.insight, in2)
+            score_sim = ctx_scoring.similar_score()
+            self.sim_insights_local.append((in2, score_sim, f, df.shape[0]))
+            # print(f'similar insight (score {score_sim}): {in2.show_insight()}')
+        
+        for s in dist_span:
+            try:
+                df, f = self.get_neighbors(level, 'between', s)
+            except:
+                df, f = self.get_neighbors(level, '==', s)
+            in2 = OutstandingInsight.create_insight_object(df, self.insight.filter, self.insight.group_by_aggregate)
+            ctx_scoring = Contextualize(self.df, self.insight, in2)
+            score_dist = ctx_scoring.distinction_score()
+            self.dist_insights_local.append((in2, score_dist, f, df.shape[0]))
+            # print(f'distinct insight (score {score_dist}): {in2.show_insight()}')
+        self.sim_insights_local.sort(key=lambda x: -x[1])
+        self.dist_insights_local.sort(key=lambda x: -x[1])
+        return similar_span_to_return, dist_span_to_return, f.attribute
         # print(f'similar: {similar}')
         # print(f'dist: {dist}')
         

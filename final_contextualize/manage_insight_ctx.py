@@ -22,19 +22,21 @@ class ContextualizedInsight():
         self.ctx = GlobalContextualize(self.target_df, self._insight)
 
     def contextualize(self):
-        level = 2
-        self.ctx.contextualize(level)
+        level = 1
+        sim, dist, attr = self.ctx.contextualize(level)
+        sim.sort(key = lambda x: -x[0])
+        dist.sort(key = lambda x: -x[0])
         op = self.target_rq[-level]
 
-        if len(self.ctx.sim_insights) > 0:
-            self.sim_insight = self.ctx.sim_insights[0]
+        if len(self.ctx.sim_insights_local) > 0:
+            self.sim_insight = self.ctx.sim_insights_local[0]
             self.sim_df = self.sim_insight[0]._df
             self.sim_op = self.sim_df.get_retreival_query()[-level]
         else:
             self.sim_insight = None
 
-        if len(self.ctx.dist_insights) > 0:
-            self.dist_insight = self.ctx.dist_insights[0]
+        if len(self.ctx.dist_insights_local) > 0:
+            self.dist_insight = self.ctx.dist_insights_local[0]
             self.dist_df = self.dist_insight[0]._df
             self.dist_op = self.dist_df.get_retreival_query()[-level]
         else:
@@ -48,22 +50,23 @@ class ContextualizedInsight():
         #     to_plot.append(('similar', self.sim_insight))
         if self.dist_insight:
             to_plot.append(('distinct', self.dist_insight))
+        if self.sim_insight:
+            to_plot.append(('sim', self.sim_insight))
+        fig, axes = plt.subplots(2, 2, layout = 'constrained', figsize = (14,14))
 
-        fig, axes = plt.subplots(2 + len(to_plot), layout = 'constrained', figsize = (7,14 + 7*len(to_plot)))
-        ax_idx = 0
         highlight = self._insight.highlight
         insight_view = self._insight.get_insight_view(self.target_df)
     # insight_ref = ins.create_insight_object(df_ref, ins.filter, ins.group_by_aggregate)
         # insight_view_ref = ins.get_insight_view(df_ref)
     # idx = set(list(str(i) for i in insight_view.index) + list(str(i) for i in insight_view_ref.index))
         idx = set(list(i for i in insight_view.index))
-
+        ax_idx_1 = 0
         for i in idx:
             if i not in list((i) for i in insight_view.index):
                 insight_view.loc[i] = 0
             # if i not in list((i) for i in insight_view_ref.index):
             #     insight_view_ref.loc[i] = 0
-    
+        idx = sorted(idx)
         vals = list(insight_view.loc[i][0] for i in idx)
         # vals_ref = list(insight_view_ref.loc[i][0] for i in idx)
         colors = []
@@ -77,18 +80,18 @@ class ContextualizedInsight():
                 # colors_ref.append(color_other)
     # colors = ['blue' for i in idx if i != str(i.highlight) else 'orange']  # Highlight the second bar
         X_axis = np.arange(len(idx))
-        axes[ax_idx].bar(X_axis, vals, 0.4, color=colors, align="center")
+        axes[0][0].bar(X_axis, vals, 0.4, color=colors, align="center")
         # ax.bar(X_axis + 0.2, vals_ref, 0.4, color=colors_ref, align="center")
         title = f'{self._insight.show_insight()}'
         
 
     
     
-    
+         
         ticklabels = [str(i) for i in idx]
-        axes[ax_idx].set_xticks(X_axis)
-        axes[ax_idx].set_xticklabels(ticklabels)
-        axes[ax_idx].set_title(title)
+        axes[0][0].set_xticks(X_axis)
+        axes[0][0].set_xticklabels(ticklabels)
+        axes[0][0].set_title(title)
 
 
 
@@ -98,37 +101,30 @@ class ContextualizedInsight():
 
 
 
-        ax_idx += 1
-        if ax_idx > len(to_plot):
+        ax_idx_1 += 1
+        if ax_idx_1 > len(to_plot):
             plt.show()
             return
-        ins = to_plot[ax_idx-1][1][0]
+        ins = to_plot[ax_idx_1-1][1][0]
         insight_view_c = ins.get_insight_view(ins._df)
-    # insight_ref = ins.create_insight_object(df_ref, ins.filter, ins.group_by_aggregate)
-        # insight_view_ref = ins.get_insight_view(df_ref)
-    # idx = set(list(str(i) for i in insight_view.index) + list(str(i) for i in insight_view_ref.index))
-        # idx = set(list(i for i in insight_view_c.index))
 
         for i in idx:
             if i not in list((i) for i in insight_view_c.index):
                 insight_view_c.loc[i] = 0
-            # if i not in list((i) for i in insight_view_ref.index):
-            #     insight_view_ref.loc[i] = 0
+
     
-        vals = list(insight_view_c.loc[i][0] for i in idx)
-        # vals_ref = list(insight_view_ref.loc[i][0] for i in idx)
-        colors = []
+        vals_ctx = list(insight_view_c.loc[i][0] for i in idx)
+        
         colors_ref = []
         for i in idx:
             if i == (highlight):
-                colors.append('blue')
-                # colors_ref.append(color_other)
+                colors_ref.append('orange')
             else:
-                colors.append('cornflowerblue')
-                # colors_ref.append(color_other)
+                colors_ref.append('peachpuff')
     # colors = ['blue' for i in idx if i != str(i.highlight) else 'orange']  # Highlight the second bar
         X_axis = np.arange(len(idx))
-        axes[ax_idx].bar(X_axis, vals, 0.4, color=colors, align="center")
+        axes[0][1].bar(X_axis - 0.2, vals, 0.4, color=colors, align="center")
+        axes[0][1].bar(X_axis + 0.2, vals_ctx, 0.4, color=colors_ref, align="center")
         # ax.bar(X_axis + 0.2, vals_ref, 0.4, color=colors_ref, align="center")
         title = f'{ins.show_insight()}'
         
@@ -137,20 +133,59 @@ class ContextualizedInsight():
     
     
         ticklabels = [str(i) for i in idx]
-        axes[ax_idx].set_xticks(X_axis)
-        axes[ax_idx].set_xticklabels(ticklabels)
-        axes[ax_idx].set_title(title)
+        axes[0][1].set_xticks(X_axis)
+        axes[0][1].set_xticklabels(ticklabels)
+        axes[0][1].set_title(title)
 
-        ax_idx += 1
 
-        try:
-            axes[ax_idx].hist(ins._df[self.dist_op.attribute], color='green', label='reference DF')
-        except:
-            pass
 
-        axes[ax_idx].hist(self.target_df[self.dist_op.attribute], color='blue', label='your DF')
-        axes[ax_idx].set_title('distributions of the altered attribute\nin your and the reference DFs')
+        ax_idx_1 += 1
+        if ax_idx_1 > len(to_plot):
+            plt.show()
+            return
+        ins = to_plot[ax_idx_1-1][1][0]
+        insight_view_c = ins.get_insight_view(ins._df)
+
+        for i in idx:
+            if i not in list((i) for i in insight_view_c.index):
+                insight_view_c.loc[i] = 0
+
+    
+        vals_ctx = list(insight_view_c.loc[i][0] for i in idx)
+        
+        colors_ref = []
+        for i in idx:
+            if i == (highlight):
+                colors_ref.append('orange')
+            else:
+                colors_ref.append('peachpuff')
+    # colors = ['blue' for i in idx if i != str(i.highlight) else 'orange']  # Highlight the second bar
+        X_axis = np.arange(len(idx))
+        axes[1][0].bar(X_axis - 0.2, vals, 0.4, color=colors, align="center")
+        axes[1][0].bar(X_axis + 0.2, vals_ctx, 0.4, color=colors_ref, align="center")
+        # ax.bar(X_axis + 0.2, vals_ref, 0.4, color=colors_ref, align="center")
+        title = f'{ins.show_insight()}'
+        
+
+    
+    
+    
+        ticklabels = [str(i) for i in idx]
+        axes[1][0].set_xticks(X_axis)
+        axes[1][0].set_xticklabels(ticklabels)
+        axes[1][0].set_title(title)
+
+        # ax_idx += 1
+
         # try:
+        #     axes[ax_idx_1][1].hist(ins._df[self.dist_op.attribute], color='green', label='reference DF')
+        # except Exception as e:
+        #     pass
+        # # axes[ax_idx].hist(ins._df.get_root()[self.dist_op.attribute], color='orange', label='rest of the data')
+
+        # axes[ax_idx_1][1].hist(self.target_df[self.dist_op.attribute], color='blue', label='your DF')
+        # axes[ax_idx_1][1].set_title('distributions of the altered attribute\nin your and the reference DFs')
+        # # try:
         #     inter = filter1.do_operation_not(all_songs)
         #     fin = f2.do_operation(inter)
         #     axes[2].hist(fin[attr], color='orange', label='distinct')

@@ -25,6 +25,10 @@ class EDADataFrame(pd.DataFrame):
     def get_operation(self):
         return self.operation
     
+    def get_root(self):
+        if self.prev_df is None:
+            return self
+        return self.prev_df.get_root()
     def get_path(self):
         if self.prev_df is None:
             return ' '

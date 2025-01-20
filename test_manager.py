@@ -17,28 +17,28 @@ from final_contextualize.manage_insight_ctx import ContextualizedInsight
 
 
 all_songs = pd.read_csv('./spotify_all.csv')
-# all_songs = all_songs.sample(frac=0.1)
+all_songs = all_songs.sample(frac=0.1)
 all_songs = EDADataFrame(all_songs)
 
 for att in all_songs.columns:
     ser = all_songs[att]
     dtype = all_songs[att].dtype.name
     if (dtype in ['int64', 'float64'] ) and len(ser.value_counts().values) > 10:
-        _, bins = pd.cut(ser, 5, retbins=True, duplicates='drop')
+        _, bins = pd.cut(ser, 30, retbins=True, duplicates='drop')
         all_songs[f'{att}_binned'] = pd.cut(all_songs[att], bins=bins)
 
 # _, bins = pd.cut(all_songs['popularity'], bins=5, retbins=True)
 # all_songs['popularity ']
 
 # attr = 'Dependent_count'
-filter1 = Filter('explicit', '==', 1)
-filter2 = Filter('instrumentalness', '<', 0.5)
+filter1 = Filter('energy', '<', 0.5)
+# filter1 = Filter('explicit', '==', 1)
 
 
 
 gb = GroupBy(['decade'], {'popularity': 'mean'})
 # df2 = filter1.do_operation(all_songs)
-df2 =gb.do_operation(filter2.do_operation(filter1.do_operation(all_songs)))
+df2 =gb.do_operation((filter1.do_operation(all_songs)))
 
 miner = OutstandingMiner(df2, df2.columns, None)
 
